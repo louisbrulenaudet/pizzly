@@ -46,8 +46,6 @@ make run
 make check
 ```
 
-[![Code execution](https://img.youtube.com/vi/FXY-WNnp2oE/0.jpg)](https://www.youtube.com/watch?v=FXY-WNnp2oE)
-
 ### Configuration
 
 Required environment variables in `.env`:
