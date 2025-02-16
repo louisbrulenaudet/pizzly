@@ -7,7 +7,7 @@
     <img src="https://img.shields.io/badge/pre--commit-enabled-brightgreen.svg" alt="Pre-commit">
 </div>
 
-<h3>
+<h3 align="center">
     <div style="display:flex;flex-direction:row;justify-content: center;align-items: center;">
         <img src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/smolagents/mascot.png" alt="Hugging Face mascot as James Bond" width="100px">
     </div>
