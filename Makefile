@@ -2,7 +2,6 @@ include make/variables.mk
 
 # Include specific command groups
 include make/help.mk
-include make/docker.mk
 include make/dev.mk
 
 # Default target

@@ -1,21 +1,7 @@
+![Plot](https://github.com/louisbrulenaudet/pizzly/blob/main/assets/thumbnail.png?raw=true)
 
-<div align="center">
-    <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python Version">
-    <img src="https://img.shields.io/badge/code%20style-ruff-000000.svg" alt="Code Style">
-    <img src="https://img.shields.io/badge/type%20checker-pyright-yellowgreen.svg" alt="Type Checker">
-    <img src="https://img.shields.io/badge/package%20manager-uv-purple.svg" alt="Package Manager">
-    <img src="https://img.shields.io/badge/pre--commit-enabled-brightgreen.svg" alt="Pre-commit">
-</div>
-
-<h3 align="center">
-    <div style="display:flex;flex-direction:row;justify-content: center;align-items: center;">
-        <img src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/smolagents/mascot.png" alt="Hugging Face mascot as James Bond" width="100px">
-    </div>
-</h3>
-
-# Barebones tool built upon Hugging Face smolagents and Alpaca for financial analysis automation 🤗
-
-## Overview
+# Pizzly, financial market analysis combining technical indicators with LLMs, featuring real-time data processing and AI-powered market insights ⚡️
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) ![Maintainer](https://img.shields.io/badge/maintainer-@louisbrulenaudet-blue) ![Python Version](https://img.shields.io/badge/python-3.11%2B-blue.svg) ![Code Style](https://img.shields.io/badge/code%20style-ruff-000000.svg) ![Package Manager](https://img.shields.io/badge/package%20manager-uv-purple.svg)
 
 This agentic market analysis system is a Python-based framework that combines technical analysis with artificial intelligence to provide comprehensive market insights. At its core, the system implements a modular architecture that seamlessly integrates statistical analysis methods with natural language processing capabilities.
 
@@ -29,75 +15,79 @@ The AI integration layer bridges technical analysis with natural language proces
 
 ### Installation
 
-The project uses a Makefile system for setup and development:
+Install the package using pip:
 
-1. **Initial Setup**
 ```bash
-make init
+pip install pizzly
 ```
 
-2. **Development Environment**
+# Usage
+
+First, set up your API credentials as environment variables:
+
 ```bash
-make run
+export ALPACA_API_KEY=your_alpaca_api_token
+export ALPACA_API_SECRET=your_alpaca_api_secret
+export HF_TOKEN=your_hf_token
 ```
 
-4. **Code Quality Checks**
-```bash
-make check
-```
-
-### Configuration
-
-Required environment variables in `.env`:
-```
-ALPACA_API_KEY=your_api_key
-ALPACA_API_SECRET=your_api_secret
-```
-
-### Usage Example
-
-The following example demonstrates comprehensive market analysis combining technical indicators with AI-powered insights:
+Then use Pizzly like this:
 
 ```python
-import os
-from datetime import datetime
 from smolagents import DuckDuckGoSearchTool, HfApiModel
 from smolagents.agents import ToolCallingAgent
 
-# Initialize AI model
+from pizzly.data.alpaca import AlpacaStock
+from pizzly.tools import FinancialTool
+
 model = HfApiModel(
-    "Qwen/Qwen2.5-72B-Instruct",
-    token="hf_"
+    "meta-llama/Llama-3.3-70B-Instruct",
+    token=hf_token
 )
 
-# Set up market analysis tools
-api_key = os.getenv("ALPACA_API_KEY")
-secret_key = os.getenv("ALPACA_API_SECRET")
+data_provider = AlpacaStock(api_key, secret_key)
+market_analysis_tool = FinancialTool(data_provider=data_provider)
 
-market_analysis_tool = FinancialTool(
-    alpaca_api_key=api_key,
-    alpaca_api_secret=secret_key
-)
-
-# Configure search capability
 search_tool = DuckDuckGoSearchTool()
 
-# Create analysis agent
 agent = ToolCallingAgent(
-    tools=[market_analysis_tool, search_tool],
+    tools=[
+        market_analysis_tool,
+        search_tool
+    ],
     model=model
 )
 
-# Execute comprehensive analysis
-analysis = agent.run(
-    """Please give me a detailed analysis of the market conditions for NVDA.
-    Include:
-    - Technical indicators (RSI, Bollinger Bands)
-    - Current news sentiment
-    - PE ratio comparison with industry
-    - Market trend analysis
-    """
+prompt = f"""Please give me a detailed analysis of the market conditions for NVDA.
+Include:
+- Technical indicators (RSI, Bollinger Bands) using financial_tool
+- Current news sentiment
+- PE ratio comparison with industry
+- Market trend analysis
+The date of the day is {datetime.now().strftime("%Y-%m-%d")}."""
+
+agent_output = agent.run(
+    prompt
 )
+```
+
+## Development
+### Prerequisites
+
+- Python 3.11 or higher
+- [uv](https://github.com/astral-sh/uv) for package management
+
+### Setting up the development environment
+
+1. Clone the repository:
+```bash
+git clone https://github.com/louisbrulenaudet/pizzly
+cd pizzly
+```
+
+2. Initialize the development environment:
+```bash
+make init
 ```
 
 ## Citing this project
@@ -106,8 +96,8 @@ If you use this code in your research, please use the following BibTeX entry.
 ```BibTeX
 @misc{louisbrulenaudet2025,
 	author = {Louis Brulé Naudet},
-	title = {Barebones tool built upon Hugging Face smolagents and Alpaca for financial analysis automation},
-	howpublished = {\url{https://github.com/louisbrulenaudet/agentic-market-tool}},
+	title = {Pizzly, financial market analysis combining technical indicators with LLMs, featuring real-time data processing and AI-powered market insights ⚡️},
+	howpublished = {\url{https://github.com/louisbrulenaudet/pizzly}},
 	year = {2025}
 }
 ```

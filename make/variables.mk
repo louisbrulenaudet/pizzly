@@ -1,12 +1,8 @@
 # make/variables.mk
 
 # Project configuration
-PROJECT_NAME := Lemone API
+PROJECT_NAME := pizzly
 VERSION := 1.0.0
-
-# Docker configuration
-APP_SERVICE := app
-REDIS_SERVICE := redis
 
 # Colors for formatting
 BLUE := \033[1;34m

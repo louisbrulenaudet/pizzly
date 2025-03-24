@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Brulé Naudet"
+  given-names: "Louis"
+  orcid: "https://orcid.org/0000-0001-9111-4879"
+title: "Pizzly, financial market analysis combining technical indicators with LLMs, featuring real-time data processing and AI-powered market insights ⚡️"
+version: 0.1.0
+date-released: 2025-03-24

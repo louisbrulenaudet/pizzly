@@ -13,6 +13,11 @@ init: ## Initialize development environment
 	uv pip install -r pyproject.toml --all-extras
 	uv sync
 
+install-dev: ## Install development dependencies
+	@echo "🔧 Installing development dependencies..."
+	uv pip install -e ".[dev]"
+	@echo "✅ Development dependencies installed successfully"
+
 check: ## Run code quality checks
 	@echo "🔍 Running code analysis..."
 	uvx ruff check
@@ -31,3 +36,13 @@ upgrade: ## Update project dependencies
 
 pre-commit: ## Run pre-commit checks
 	pre-commit run --all-files
+
+build: ## Build the project
+	@echo "🔨 Building project..."
+	uv build
+	@echo "✅ Build completed successfully"
+
+publish: ## Publish the project
+	@echo "📦 Publishing project..."
+	uv publish
+	@echo "✅ Project published successfully"

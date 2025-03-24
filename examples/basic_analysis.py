@@ -34,4 +34,6 @@ if __name__ == "__main__":
     - Market trend analysis
 The date of the day is {datetime.now().strftime("%Y-%m-%d")}."""
 
-    agent_output = agent.run(prompt)
+    agent_output = agent.run(
+        prompt
+    )

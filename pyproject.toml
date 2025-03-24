@@ -1,21 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
-name = "agentic-market-tool"
+name = "pizzly"
 version = "0.1.0"
-description = "Agentic market analysis based on Polars and Transformers"
+description = "Python library for financial market analysis combining traditional technical indicators with LLMs, featuring real-time data processing and AI-powered market insights ⚡️"
 authors = [{name = "Louis Brulé Naudet", email = "contact@louisbrulenaudet.com"}]
+maintainers = [
+    { name = "Louis Brulé Naudet", email = "contact@louisbrulenaudet.com" },
+]
 readme = "README.md"
-license = {text = "Apache License (2.0)"}
+license = {text = "Apache-2.0"}
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache License (2.0)",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Office/Business :: Financial",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "Topic :: Scientific/Engineering :: Information Analysis",
 ]
-keywords = ["market analysis", "transformers", "polars", "finance", "AI"]
-
+keywords = ["market analysis", "transformers", "polars", "finance", "AI", "technical analysis", "trading", "financial indicators", "real-time data", "machine learning", "time series", "bollinger bands", "RSI", "stock market", "financial markets"]
 requires-python = ">=3.11"
 dependencies = [
     "accelerate>=1.3.0",
@@ -24,9 +35,12 @@ dependencies = [
     "pydantic>=2.10.6",
     "pydantic-settings>=2.7.1",
     "smolagents>=1.8.1",
+    "ipykernel>=6.29.5",
+    "nbformat>=5.10.4",
+    "ipython>=9.0.2"
 ]
 
-[dependency-groups]
+[project.optional-dependencies]
 dev = [
     "pre-commit>=4.1.0",
     "pre-commit-uv>=4.1.4",
@@ -35,9 +49,25 @@ dev = [
     "ruff>=0.9.3",
 ]
 
+[project.urls]
+Homepage = "https://github.com/louisbrulenaudet/pizzly"
+Repository = "https://github.com/louisbrulenaudet/pizzly"
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
 addopts = "--maxfail=1 --disable-warnings -q"
+
+[tool.pyright]
+exclude = [
+    "**/tests"
+]
+
+[tool.ruff]
+fix = true
+
+[tool.ruff.format]
+quote-style = "double"
+line-ending = "auto"
 
 [tool.ruff.lint]
 select = [
@@ -69,25 +99,8 @@ ignore = [
     "ANN",
 ]
 
-[tool.logfire]
-pydantic_plugin_record = "all"
-
-[tool.ruff]
-fix = true
-
-[tool.pyright]
-exclude = [
-    "**/tests"
-]
-
-[tool.ruff.format]
-quote-style = "double"
-line-ending = "auto"
-
 [tool.ruff.lint.pyupgrade]
-# Preserve types, even if a file imports `from __future__ import annotations`.
 keep-runtime-typing = true
 
-[project.urls]
-Homepage = "https://github.com/louisbrulenaudet/agentic-market-tool"
-Repository = "https://github.com/louisbrulenaudet/agentic-market-tool"
+[tool.logfire]
+pydantic_plugin_record = "all"
