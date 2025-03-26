@@ -1,7 +1,7 @@
 ![Plot](https://github.com/louisbrulenaudet/pizzly/blob/main/assets/thumbnail.png?raw=true)
 
 # Pizzly, financial market analysis combining technical indicators with LLMs, featuring real-time data processing and AI-powered market insights ⚡️
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) ![Maintainer](https://img.shields.io/badge/maintainer-@louisbrulenaudet-blue) ![Python Version](https://img.shields.io/badge/python-3.11%2B-blue.svg) ![Code Style](https://img.shields.io/badge/code%20style-ruff-000000.svg) ![Package Manager](https://img.shields.io/badge/package%20manager-uv-purple.svg)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) ![Maintainer](https://img.shields.io/badge/maintainer-@louisbrulenaudet-blue) ![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg) ![Code Style](https://img.shields.io/badge/code%20style-ruff-000000.svg) ![Package Manager](https://img.shields.io/badge/package%20manager-uv-purple.svg)
 
 This agentic market analysis system is a Python-based framework that combines technical analysis with artificial intelligence to provide comprehensive market insights. At its core, the system implements a modular architecture that seamlessly integrates statistical analysis methods with natural language processing capabilities.
 
@@ -74,7 +74,7 @@ agent_output = agent.run(
 ## Development
 ### Prerequisites
 
-- Python 3.11 or higher
+- Python 3.10 or higher
 - [uv](https://github.com/astral-sh/uv) for package management
 
 ### Setting up the development environment
