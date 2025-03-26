@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pizzly"
-version = "0.1.1"
+version = "0.1.2"
 description = "Python library for financial market analysis combining traditional technical indicators with LLMs, featuring real-time data processing and AI-powered market insights ⚡️"
 authors = [{name = "Louis Brulé Naudet", email = "contact@louisbrulenaudet.com"}]
 maintainers = [
