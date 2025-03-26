@@ -4,9 +4,10 @@ import polars as pl
 from smolagents import Tool
 
 from .._enums import Type
+from ..core.processor import Processor
 from ..core.provider import BaseProvider
 from ..indicators import RSI, SmaBB
-from ..models.tools import FinancialAnalysisModel, PricePositionModel
+from ..models.tools import IndicatorOutput
 
 __all__ = ["FinancialTool"]
 
@@ -33,6 +34,8 @@ class FinancialTool(Tool):
         - Clear signal generation
         - Comprehensive error handling
         - Memory-efficient data processing
+        - Parallel processing of indicators
+        - Detailed interpretations for each indicator
 
     Signal Types:
         - Momentum signals from RSI
@@ -43,6 +46,7 @@ class FinancialTool(Tool):
 
     Attributes:
         data_provider (BaseProvider): Data provider instance for fetching market data
+        processor (Processor): Processor for parallel computation of indicators
         name (str): Tool identifier for the smol-ai framework
         description (str): Detailed tool functionality description
         inputs (Dict): Parameter specifications including:
@@ -61,7 +65,7 @@ class FinancialTool(Tool):
     Example:
         >>> data_provider = AlpacaStock("AAPL", api_key, secret_key)
         >>> analyzer = FinancialTool(data_provider)
-        >>> analysis = analyzer.forward("AAPL", rsi_window="14", bb_window="20")
+        >>> analysis = analyzer.forward("AAPL", rsi_window=14, bb_window=20, start_date="2023-01-01")
         >>> print(analysis)
         Market Analysis Results for AAPL:
         RSI (14 periods): 58.43
@@ -115,7 +119,20 @@ class FinancialTool(Tool):
         data_provider: BaseProvider,
         **kwargs: dict[str, str | int | float],
     ) -> None:
+        """
+        Initialize the financial analysis tool with a data provider.
+
+        Args:
+            data_provider (BaseProvider): Provider instance for fetching market data
+            **kwargs: Additional arguments to pass to the Tool constructor
+
+        Example:
+            >>> from src.pizzly.data.alpaca import AlpacaStock
+            >>> data_provider = AlpacaStock(api_key, secret_key)
+            >>> tool = FinancialTool(data_provider=data_provider)
+        """
         self.data_provider = data_provider
+        self.processor = Processor(max_workers=4)
         super().__init__(**kwargs)
 
     def fetch_market_data(
@@ -144,11 +161,11 @@ class FinancialTool(Tool):
 
     def analyze_market_conditions(
         self, df: pl.DataFrame, rsi_window: int, bb_window: int
-    ) -> dict:
+    ) -> str:
         """
         Analyze market conditions using technical indicators.
 
-        This method combines RSI and Bollinger Bands analysis to provide a comprehensive market assessment including trend strength, potential reversal points, and trading signals.
+        This method combines RSI and Bollinger Bands analysis to provide a comprehensive market assessment including trend strength, potential reversal points, and trading signals. It uses parallel processing to compute indicators efficiently and gathers their interpretations.
 
         Args:
             df (pl.DataFrame): Price data containing required columns:
@@ -171,6 +188,7 @@ class FinancialTool(Tool):
                     - upper_band (float): Upper Bollinger Band value
                     - lower_band (float): Lower Bollinger Band value
                 - signals (List[str]): List of trading signals and conditions
+                - interpretations (Dict[str, str]): Human-readable interpretations from each indicator
 
         Example:
             >>> df = analyzer.fetch_market_data("AAPL")
@@ -186,7 +204,11 @@ class FinancialTool(Tool):
                 'signals': [
                     'RSI indicates neutral conditions',
                     'Price within Bollinger Bands - neutral trend'
-                ]
+                ],
+                'interpretations': {
+                    'RSI': 'RSI (14 periods) = 62.50 - The market is showing bullish momentum, but not yet at extreme levels.',
+                    'SmaBB': 'Bollinger Bands (20 periods): Price ($178.05) is between the middle ($177.45) and upper band ($182.35), suggesting bullish price action within normal volatility range.'
+                }
             }
         """
         if len(df) < max(rsi_window, bb_window):
@@ -194,49 +216,16 @@ class FinancialTool(Tool):
                 f"Insufficient data: need at least {max(rsi_window, bb_window)} data points"
             )
 
-        # Calculate RSI
         rsi_indicator = RSI(dataframe=df, column="close", window_size=rsi_window)
-        rsi_values = rsi_indicator.compute()
-
-        # Calculate Bollinger Bands
         bb_indicator = SmaBB(dataframe=df, column="close", window_size=bb_window)
-        sma, upper_band, lower_band = bb_indicator.compute()
 
-        # Get the latest values
-        if rsi_values is None or upper_band is None or lower_band is None:
-            raise ValueError("Failed to compute technical indicators")
+        indicators = [rsi_indicator, bb_indicator]
 
-        latest_rsi = rsi_values.tail(1)[0]
-        latest_price = df["close"].tail(1)[0]
-        latest_upper_band = upper_band.tail(1)[0]
-        latest_lower_band = lower_band.tail(1)[0]
+        self.processor.process_parallel(indicators, "compute")
 
-        # Create validated model instances
-        price_position = PricePositionModel(
-            current_price=float(latest_price),
-            upper_band=float(latest_upper_band),
-            lower_band=float(latest_lower_band),
-        )
+        interpretations = self.processor.process_parallel(indicators, "to_string")
 
-        signals = []
-        # RSI signal analysis
-        if latest_rsi > 70:
-            signals.append("RSI indicates overbought conditions")
-        elif latest_rsi < 30:
-            signals.append("RSI indicates oversold conditions")
-
-        # Bollinger Bands signal analysis
-        if latest_price > latest_upper_band:
-            signals.append("Price above upper Bollinger Band - potential resistance")
-        elif latest_price < latest_lower_band:
-            signals.append("Price below lower Bollinger Band - potential support")
-
-        # Validate with FinancialAnalysisModel
-        analysis = FinancialAnalysisModel(
-            rsi_value=float(latest_rsi), price_position=price_position, signals=signals
-        )
-
-        return analysis.model_dump()
+        return IndicatorOutput.format(interpretations)
 
     def forward(  # type: ignore[override]
         self,
@@ -256,8 +245,8 @@ class FinancialTool(Tool):
 
         Args:
             symbol (str): Stock symbol to analyze (e.g., 'AAPL')
-            rsi_window (str, optional): RSI calculation period. Defaults to 14
-            bb_window (str, optional): Bollinger Bands calculation period. Defaults to 20
+            rsi_window (int): RSI calculation period. Defaults to 14
+            bb_window (int): Bollinger Bands calculation period. Defaults to 20
             start_date (str): Start date for analysis in YYYY-MM-DD format.
             end_date (str, optional): End date for analysis in YYYY-MM-DD format. Defaults to current date.
 
@@ -267,6 +256,7 @@ class FinancialTool(Tool):
                 - Price position relative to Bollinger Bands
                 - Generated trading signals
                 - Overall market condition assessment
+                - Detailed interpretations from each indicator
 
         Example:
             >>> data_provider = AlpacaStock("AAPL", api_key, secret_key)
@@ -285,6 +275,10 @@ class FinancialTool(Tool):
             Current Price: 173.25
             Upper Band: 180.45
             Lower Band: 165.87
+
+            Detailed Analysis:
+            - RSI (14 periods) = 58.43 - The market is showing bullish momentum, but not yet at extreme levels.
+            - Bollinger Bands (20 periods): Price ($173.25) is between the middle ($172.15) and upper band ($180.45), suggesting bullish price action within normal volatility range.
 
         Note:
             - RSI > 70 indicates overbought conditions
@@ -311,19 +305,9 @@ class FinancialTool(Tool):
             if df is None:
                 return "Error: Failed to fetch market data"
 
-            analysis_result = self.analyze_market_conditions(df, rsi_window, bb_window)
+            analysis = self.analyze_market_conditions(df, rsi_window, bb_window)
 
-            # Format output
-            output = [
-                f"Market Analysis Results for {symbol}:",
-                f"RSI ({rsi_window} periods): {analysis_result['rsi_value']:.2f}",
-                "\nPrice Position:",
-                f"Current Price: {analysis_result['price_position']['current_price']:.2f}",
-                f"Upper Band of Bollinger Bands: {analysis_result['price_position']['upper_band']:.2f}",
-                f"Lower Band of Bollinger Bands: {analysis_result['price_position']['lower_band']:.2f}",
-            ]
-
-            return "\n".join(output)
+            return analysis
 
         except Exception as e:
-            return f"Error analyzing market data: {str(e)}"
+            return f"Error: {str(e)}"

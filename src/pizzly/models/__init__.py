@@ -1,3 +1,3 @@
-from .tools import FinancialAnalysisModel
+from .tools import IndicatorOutput
 
-__all__ = ["FinancialAnalysisModel"]
+__all__ = ["IndicatorOutput"]

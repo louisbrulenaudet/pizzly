@@ -78,35 +78,24 @@ class SmaBB(BaseIndicator):
         self,
         dataframe: pl.DataFrame,
         column: str,
-        window_size: int = 14,
-        min_periods: int | None = None,
+        window_size: int = 20,
+        min_periods: int = 1,
     ) -> None:
-        super().__init__(name="SmaBB")
+        """Initialize Bollinger Bands indicator with input data and parameters."""
+        super().__init__(
+            name="SmaBB", description="Simple Moving Average Bollinger Bands"
+        )
         self.dataframe = dataframe
         self.column = column
         self.window_size = window_size
         self.min_periods = min_periods
-
-    def get_name(self) -> str:
-        """
-        Retrieve the name identifier of the Bollinger Bands indicator.
-
-        Returns:
-            str: The name of the indicator ('SmaBB')
-
-        Raises:
-            Exception: If there's an error accessing the name attribute, returns empty string
-                      and logs the error
-
-        Example:
-            >>> bb = SmaBB(df, "close")
-            >>> print(bb.get_name())
-            'SmaBB'
-        """
-        try:
-            return self.name
-        except Exception:
-            return ""
+        self.sma = None
+        self.upper_band = None
+        self.lower_band = None
+        self.latest_price = None
+        self.latest_upper = None
+        self.latest_lower = None
+        self.latest_sma = None
 
     def get_series(self) -> pl.Series | None:
         """
@@ -115,7 +104,7 @@ class SmaBB(BaseIndicator):
         This method provides access to the stored indicator values after computation. Should be called after compute() to ensure values are available.
 
         Returns:
-            Optional[pl.Series]: The computed Bollinger Bands series or None if not calculated
+            Optional[tuple[pl.Series, pl.Series, pl.Series]]: A tuple containing the computed Bollinger Bands series or None if not calculated
 
         Raises:
             Exception: If there's an error accessing the series, returns None and logs the error
@@ -185,6 +174,89 @@ class SmaBB(BaseIndicator):
             self.upper_band = self.sma + (std * 2)
             self.lower_band = self.sma - (std * 2)
 
+            # Store latest values for interpretation
+            if len(self.dataframe) > 0:
+                self.latest_price = self.dataframe[self.column].tail(1)[0]
+
+            if len(self.sma) > 0:
+                self.latest_sma = self.sma.tail(1)[0]
+
+            if len(self.upper_band) > 0:
+                self.latest_upper = self.upper_band.tail(1)[0]
+
+            if len(self.lower_band) > 0:
+                self.latest_lower = self.lower_band.tail(1)[0]
+
             return self.sma, self.upper_band, self.lower_band
+
         except Exception:
+            self.latest_price = None
+            self.latest_sma = None
+            self.latest_upper = None
+            self.latest_lower = None
             return pl.Series([]), pl.Series([]), pl.Series([])
+
+    def to_string(self) -> str:
+        """
+        Interpret the latest Bollinger Bands values.
+
+        This method provides a human-readable interpretation of the relationship between the current price and the Bollinger Bands, offering insights into volatility, potential overbought/oversold conditions, and trend strength.
+
+        Returns:
+            str: Textual interpretation of the current price position relative to Bollinger Bands
+                and its implications for market conditions. If values are not available, returns
+                an error message.
+
+        Example:
+            >>> bb = SmaBB(df, "close", window_size=20)
+            >>> bb.compute()
+            >>> interpretation = bb.interpret()
+            >>> print(interpretation)
+            'Bollinger Bands (20 periods): Price ($172.55) is above the upper band ($171.25),
+            indicating potential overbought conditions or strong upward momentum.'
+        """
+        if (
+            self.latest_price is None
+            or self.latest_sma is None
+            or self.latest_upper is None
+            or self.latest_lower is None
+        ):
+            return "Bollinger Bands values are not available. Please compute the indicator first."
+
+        # Format values with 2 decimal places
+        price = float(self.latest_price)
+        sma = float(self.latest_sma)
+        upper = float(self.latest_upper)
+        lower = float(self.latest_lower)
+
+        # Base information
+        interpretation = (
+            f"Bollinger Bands ({self.window_size} periods): Price (${price:.2f})"
+        )
+
+        # Calculate bandwidth for volatility assessment
+        bandwidth = (upper - lower) / sma * 100
+
+        # Position relative to bands
+        if price > upper:
+            interpretation += f" is above the upper band (${upper:.2f}), indicating potential overbought conditions or strong upward momentum."
+        elif price < lower:
+            interpretation += f" is below the lower band (${lower:.2f}), indicating potential oversold conditions or strong downward momentum."
+        elif price > sma:
+            interpretation += f" is between the middle (${sma:.2f}) and upper band (${upper:.2f}), suggesting bullish price action within normal volatility range."
+        elif price < sma:
+            interpretation += f" is between the middle (${sma:.2f}) and lower band (${lower:.2f}), suggesting bearish price action within normal volatility range."
+        else:
+            interpretation += (
+                f" is at the middle band (${sma:.2f}), indicating neutral momentum."
+            )
+
+        # Add volatility assessment
+        if bandwidth > 4:
+            interpretation += (
+                f" Bandwidth of {bandwidth:.2f}% indicates high volatility."
+            )
+        elif bandwidth < 2:
+            interpretation += f" Bandwidth of {bandwidth:.2f}% indicates low volatility, suggesting potential for increased volatility soon."
+
+        return interpretation

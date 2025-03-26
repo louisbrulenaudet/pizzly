@@ -72,23 +72,12 @@ class RSI(BaseIndicator):
         min_periods: int = 1,
     ) -> None:
         """Initialize RSI indicator with input data and parameters."""
-        super().__init__(name="RSI")
+        super().__init__(name="RSI", description="Relative Strength Index")
         self.dataframe = dataframe
         self.column = column
         self.window_size = window_size
         self.min_periods = min_periods
-
-    def get_name(self) -> str:
-        """
-        Retrieve the name identifier of the RSI indicator.
-
-        Returns:
-            str: The name of the indicator ('RSI')
-        """
-        try:
-            return self.name
-        except Exception:
-            return ""
+        self.latest_value = None
 
     def get_series(self) -> pl.Series | None:
         """
@@ -165,6 +154,52 @@ class RSI(BaseIndicator):
                 rsi=pl.lit(100).sub(pl.lit(100).truediv(pl.lit(1).add(pl.col("rs"))))
             )
 
-            return self.dataframe["rsi"].tail(-1)
+            # Store the latest RSI value for interpretation
+            rsi_series = self.dataframe["rsi"].tail(-1)
+            if len(rsi_series) > 0:
+                self.latest_value = rsi_series.tail(1)[0]
+
+            return rsi_series
         except Exception:
+            self.latest_value = None
             return None
+
+    def to_string(self) -> str:
+        """
+        Interpret the latest RSI value.
+
+        This method provides a human-readable interpretation of the RSI indicator based on the most recent calculated value. It analyzes the momentum conditions and provides appropriate trading signals.
+
+        Returns:
+            str: Textual interpretation of the current RSI value and its implications
+                for market conditions. If the RSI value is not available, returns
+                an error message.
+
+        Example:
+            >>> rsi = RSI(df, "close", window_size=14)
+            >>> rsi.compute()
+            >>> interpretation = rsi.interpret()
+            >>> print(interpretation)
+            'RSI (14 periods) = 72.50 - The market is showing overbought conditions, suggesting potential reversal or correction.'
+        """
+        if self.latest_value is None:
+            return "RSI indicator value is not available. Please compute the indicator first."
+
+        rsi_value = float(self.latest_value)
+
+        # Base interpretation text
+        interpretation = f"RSI ({self.window_size} periods) = {rsi_value:.2f}"
+
+        # Add condition-specific interpretation
+        if rsi_value > 70:
+            interpretation += " - The market is showing overbought conditions, suggesting potential reversal or correction."
+        elif rsi_value < 30:
+            interpretation += " - The market is showing oversold conditions, suggesting potential reversal or buying opportunity."
+        elif rsi_value > 60:
+            interpretation += " - The market is showing bullish momentum, but not yet at extreme levels."
+        elif rsi_value < 40:
+            interpretation += " - The market is showing bearish momentum, but not yet at extreme levels."
+        else:
+            interpretation += " - The market is in a neutral momentum state with no clear directional bias."
+
+        return interpretation

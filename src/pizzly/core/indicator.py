@@ -22,17 +22,17 @@ class BaseIndicator(metaclass=ABCMeta):
         The compute() method should be implemented based on the specific indicator's logic.
     """
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, description: str) -> None:
         """
-        Initialize the indicator with a name.
+        Initialize the indicator with a name and description.
 
         Args:
             name (str): Identifier for the indicator
         """
         self.name = name
+        self.description = description
         self.series = None
 
-    @abstractmethod
     def get_name(self) -> str:
         """
         Retrieve the indicator's name.
@@ -48,7 +48,21 @@ class BaseIndicator(metaclass=ABCMeta):
         except Exception:
             return ""
 
-    @abstractmethod
+    def get_description(self) -> str:
+        """
+        Retrieve the indicator's description.
+
+        Returns:
+            str: The indicator's description
+
+        Raises:
+            Exception: If there's an error accessing the description attribute
+        """
+        try:
+            return self.description
+        except Exception:
+            return ""
+
     def get_series(self) -> pl.Series | None:
         """
         Retrieve the computed indicator values.
@@ -63,3 +77,47 @@ class BaseIndicator(metaclass=ABCMeta):
             return self.series
         except Exception:
             return pl.Series([])
+
+    @abstractmethod
+    def compute(self) -> pl.Series | pl.DataFrame | None | tuple | list:
+        """
+        Compute the indicator values.
+
+        This method implements the core logic for calculating the indicator values based on the input data. Each indicator subclass must provide its specific implementation.
+
+        Returns:
+            Optional[pl.Series | pl.DataFrame ]: The calculated indicator values or None if calculation fails
+
+        Raises:
+            NotImplementedError: If not implemented by the subclass
+
+        Example:
+            >>> indicator = ConcreteIndicator(df, "close", window_size=14)
+            >>> result = indicator.compute()
+            >>> print(result)
+            shape: (100,)
+            Series: 'indicator_name' [f64]
+            [
+                45.23,
+                46.78,
+                ...
+            ]
+        """
+        raise NotImplementedError("Each indicator must implement its computation logic")
+
+    def to_string(self) -> str:
+        """
+        Generate a human-readable interpretation of the indicator values.
+
+        This method provides a default implementation that returns a simple message. Indicator subclasses should override this method to provide specific, meaningful interpretations of their calculated values.
+
+        Returns:
+            str: A text interpretation of the indicator values
+
+        Example:
+            >>> indicator = ConcreteIndicator(df, "close", window_size=14)
+            >>> indicator.compute()
+            >>> print(indicator.to_string())
+            'ConcreteIndicator value is 45.67, indicating neutral market conditions.'
+        """
+        return f"No specific interpretation available for {self.get_name()} indicator. Consider implementing a custom to_string() method."

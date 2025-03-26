@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pizzly"
-version = "0.1.2"
+version = "0.1.3"
 description = "Python library for financial market analysis combining traditional technical indicators with LLMs, featuring real-time data processing and AI-powered market insights ⚡️"
 authors = [{name = "Louis Brulé Naudet", email = "contact@louisbrulenaudet.com"}]
 maintainers = [
@@ -27,12 +27,11 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Information Analysis",
 ]
 keywords = ["market analysis", "transformers", "polars", "finance", "AI", "technical analysis", "trading", "financial indicators", "real-time data", "machine learning", "time series", "bollinger bands", "RSI", "stock market", "financial markets"]
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = [
     "alpaca-py>=0.38.0",
     "polars>=1.22.0",
     "pydantic>=2.10.6",
-    "pydantic-settings>=2.7.1",
     "smolagents>=1.8.1",
 ]
 
@@ -88,6 +87,8 @@ select = [
 ignore = [
     "B008",
     "E501",
+    "ANN101",
+    "ANN102",
 ]
 
 [tool.ruff.lint.per-file-ignores]
