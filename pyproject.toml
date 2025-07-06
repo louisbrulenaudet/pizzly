@@ -30,6 +30,8 @@ keywords = ["market analysis", "transformers", "polars", "finance", "AI", "techn
 requires-python = ">=3.10"
 dependencies = [
     "alpaca-py>=0.38.0",
+    "finnhub-python>=2.4.24",
+    "httpx>=0.28.1",
     "polars>=1.22.0",
     "pydantic>=2.10.6",
     "smolagents>=1.8.1",
