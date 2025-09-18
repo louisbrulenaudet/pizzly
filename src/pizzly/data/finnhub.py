@@ -1,4 +1,3 @@
-import contextlib
 from datetime import datetime
 from typing import Any
 
@@ -62,7 +61,9 @@ class Finnhub(BaseProvider):
         try:
             method = getattr(self.client, endpoint)
         except AttributeError as exc:
-            raise AttributeError(f"Finnhub client has no endpoint '{endpoint}'") from exc
+            raise AttributeError(
+                f"Finnhub client has no endpoint '{endpoint}'"
+            ) from exc
 
         try:
             result = method(*args, **kwargs)
@@ -73,7 +74,8 @@ class Finnhub(BaseProvider):
         # If result is a dict, find the largest value that is a list of dicts
         if isinstance(result, dict):
             candidate_lists = [
-                v for v in result.values()
+                v
+                for v in result.values()
                 if isinstance(v, list) and v and all(isinstance(i, dict) for i in v)
             ]
             if candidate_lists:
