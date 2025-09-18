@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 import httpx
 import polars as pl
@@ -40,7 +40,9 @@ class Edgar(BaseProvider):
         - User-Agent header is required by the SEC and set automatically.
     """
 
-    def __init__(self, user_agent: str = f"Pizzly/{__version__} (+https://example.com/contact)") -> None:
+    def __init__(
+        self, user_agent: str = f"Pizzly/{__version__} (+https://example.com/contact)"
+    ) -> None:
         """
         Initialize the Edgar provider with a custom User-Agent.
 
@@ -72,59 +74,63 @@ class Edgar(BaseProvider):
             year=d.year, q=quarter, yyyymmdd=d.strftime("%Y%m%d")
         )
 
-    def fetch(self, days_back: int = 7) -> pl.DataFrame:
+    def fetch(
+        self, symbol: str, start: datetime | None = None, end: datetime | None = None
+    ) -> pl.DataFrame | None:
         """
         Fetch recent S-1 and F-1 filings from the SEC Edgar daily index.
 
-        Iterates over the last `days_back` days, retrieves and parses the daily index files,
+        Iterates over the date range from `start` to `end`, retrieves and parses the daily index files,
         and returns a Polars DataFrame containing the filings.
 
         Args:
-            days_back (int): Number of days to look back for filings. Defaults to 7.
+            symbol (str): Ignored for Edgar, included for interface compatibility.
+            start (datetime | None): Start date for filings (default: 7 days ago).
+            end (datetime | None): End date for filings (default: today).
 
         Returns:
-            pl.DataFrame: DataFrame with columns ['cik', 'company', 'form_type', 'date_filed', 'file_name'].
+            pl.DataFrame | None: DataFrame with columns ['cik', 'company', 'form_type', 'date_filed', 'file_name'].
 
         Raises:
             httpx.HTTPStatusError: For non-404 HTTP errors during data retrieval.
-
-        Example:
-            >>> provider = Edgar()
-            >>> df = provider.fetch(days_back=5)
-            >>> print(df.head())
         """
         records = []
         today = date.today()
-        for d in (today - timedelta(n) for n in range(days_back)):
-            try:
-                txt = self.http.get(self._master_url_for(d)).text
+        start_date = start.date() if start else today - timedelta(days=7)
+        end_date = end.date() if end else today
 
-            except httpx.HTTPStatusError as ex:
-                if ex.response.status_code == 404:
-                    continue  # weekends / holidays
-                raise
+        for n in range((end_date - start_date).days + 1):
+            d = end_date - timedelta(n)
+            txt = self._get_daily_filing_text(d)
+            records.extend(self._parse_filing_lines(txt))
 
-            for line in txt.splitlines():
-                if "|S-1" in line or "|F-1" in line:
-                    parts = line.split("|")
-                    if len(parts) != 5:
-                        continue
-
-                    record = {
-                        "cik": parts[0],
-                        "company": parts[1],
-                        "form_type": parts[2],
-                        "date_filed": parts[3],
-                        "file_name": parts[4],
-                    }
-
-                    records.append(record)
-
-        self._dataframe = (
-            pl.DataFrame(records)
-            .with_columns(
-                pl.col("date_filed").str.strptime(pl.Date, "%Y%m%d")
-            )
+        self._dataframe = pl.DataFrame(records).with_columns(
+            pl.col("date_filed").str.strptime(pl.Date, "%Y%m%d")
         )
 
         return self._dataframe
+
+    def _get_daily_filing_text(self, d: date) -> str:
+        try:
+            return self.http.get(self._master_url_for(d)).text
+        except httpx.HTTPStatusError as ex:
+            if ex.response.status_code == 404:
+                return ""  # weekends / holidays
+            raise
+
+    def _parse_filing_lines(self, txt: str) -> list[dict]:
+        records = []
+        for line in txt.splitlines():
+            if "|S-1" in line or "|F-1" in line:
+                parts = line.split("|")
+                if len(parts) != 5:
+                    continue
+                record = {
+                    "cik": parts[0],
+                    "company": parts[1],
+                    "form_type": parts[2],
+                    "date_filed": parts[3],
+                    "file_name": parts[4],
+                }
+                records.append(record)
+        return records

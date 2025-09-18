@@ -23,12 +23,15 @@ class Finnhub(BaseProvider):
             Calls a specified Finnhub API endpoint with given arguments.
             Returns a Polars DataFrame if the result is tabular, otherwise returns the raw result.
     """
+
     def __init__(self, finnhub_api_key: str) -> None:
         super().__init__()
         self.finnhub_api_key = finnhub_api_key
         self.client = Client(api_key=self.finnhub_api_key)
 
-    def fetch(self, endpoint: str, *args: object, **kwargs: object) -> pl.DataFrame | object:
+    def fetch(
+        self, endpoint: str, *args: object, **kwargs: object
+    ) -> pl.DataFrame | object:
         """
         Call any finnhub endpoint with given arguments.
         If the result is tabular (dict of lists), convert to polars.DataFrame.
