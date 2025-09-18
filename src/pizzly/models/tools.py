@@ -59,7 +59,7 @@ class IndicatorOutput(BaseModel):
             return "No indicator analysis available."
 
         result = "Detailed Analysis:\n"
-        for _, interpretation in interpretations.items():
+        for interpretation in interpretations.values():
             result += f"- {interpretation}\n"
 
         return result.strip()
